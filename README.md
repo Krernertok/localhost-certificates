@@ -1,6 +1,6 @@
 # localhost-certificates
 
-Creating a personal CA certificate enables localhost-testing to resemble production more accurately 
+Creating a personal CA certificate allows localhost-testing to resemble production more accurately 
 as you will be able to create trusted certificates for your own needs. However creating and storing
 your own CA certificates can be a bit tedious, as you need to remember where you stored the CA you 
 created last year and you may end up creating a new CA for all your localhost testing needs. While 
@@ -18,7 +18,7 @@ CA certificates with openssl and in any case it offers a handy storage for them 
 
 ## Usage
 
-#### TL;DR
+### TL;DR
 
 ```
 docker-compose up -d
@@ -32,19 +32,19 @@ Store printed unseal key to some secure place and import the printed certificate
 
 go to [https://localhost:8200], unseal with unseal key and log in with admin / admin
 
-#### More detailed instructions
+### More detailed instructions
 
 The docker-compose has three environment variables with default values
 
 ```
-USER (default: admin)
-PASS (default: admin)
+USERNAME (default: admin)
+PASSWORD (default: admin)
 DOCKER_SUBNET (default: 172.16.16.0/30)
 ```
 
 To override these, you can create an .env -file and add your preferred change to that before starting the docker
 initially. Changing at least the default password is recommendable. You may either uncomment the environment-file
-section from the docker-compose -file 
+section from the docker-compose -file or use `--env-file` switch when initially running the docker-compose
 
 When you've made the changes you want, you're all set for the initial run:
 
@@ -92,9 +92,9 @@ before hitting `generate`
 
 The initial run will create three docker volumes
 
-* docker_vault_certs
-* docker_vault_file
-* docker_vault_logs
+* vault_certs
+* vault_file
+* vault_logs
 
 It will also set up vault for you:
 
