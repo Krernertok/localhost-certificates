@@ -1,0 +1,33 @@
+version: '3'
+services:
+  vault:
+    build: 
+      context: .
+    ports:
+      - "127.0.0.1:8200:8200"
+    environment:
+      USER: ${USERNAME:-admin}
+      PASS: ${PASSWORD:-admin}
+    volumes:
+      - vault_file:/vault/file
+      - vault_logs:/vault/logs
+      - vault_certs:/vault/certs
+#    env_file:
+#      - .env
+    cap_add:
+      - IPC_LOCK      
+    entrypoint: /vault/init.sh 
+    restart: always
+#vault server -config=/vault/config/server.hcl
+   
+volumes:
+  vault_file:
+  vault_logs:
+  vault_certs:
+
+networks:
+  default:
+    ipam:
+      driver: default
+      config:
+        - subnet: ${DOCKER_SUBNET:-172.16.16.0/30}
