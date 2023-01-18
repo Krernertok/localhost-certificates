@@ -1,4 +1,6 @@
 #!/bin/sh
+source additional_features.sh
+
 if [ ! -f /vault/certs/localhost.pem ]; then
   export VAULT_ADDR=http://127.0.0.1:8200
   vault server -config /vault/server.hcl &
@@ -38,6 +40,9 @@ if [ ! -f /vault/certs/localhost.pem ]; then
   cat /vault/certs/localhost_CA_cert.crt > /vault/certs/ca.pem
   echo "" >> /vault/certs/ca.pem
   cat /tmp/localhost_data.json|jq -r .data.issuing_ca >> /vault/certs/ca.pem
+  if [ "${ENABLE_SSH_CERTS}x" != "x" ]; then
+    init_ssh_certs
+  fi
   vault token revoke $(cat /tmp/vault.init | grep '^Initial' | awk '{print $4}')
   vault operator step-down
   killall vault
