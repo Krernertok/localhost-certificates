@@ -168,8 +168,6 @@ Then get signed cert for ssh connection:
 ssh-keygen -t rsa -b 4096 -f ~/.ssh/testkey
 
 ## then get signed certificate for it:
-
-```
 vault write -field=signed_key ssh-certs/sign/ssh-role public_key=@$HOME/.ssh/testkey.pub > $HOME/.ssh/testkey-cert.pub
 ```
 
