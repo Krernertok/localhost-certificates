@@ -107,3 +107,125 @@ It will also set up vault for you:
 
 Note that the admin policy allows quite wide permissions to interact with the vault, it does not limit the usage for certificates, but you may use it for
 other purposes as well.
+
+## Additional features
+Additional features for vault.
+
+### SSH certificates
+The setup and instructions are based on hashicorps instructions:
+https://developer.hashicorp.com/vault/docs/secrets/ssh/signed-ssh-certificates
+
+To enable ssh-certificates when starting the environment first time, edit the docker-compose.yml file and add following
+environment variable:
+
+```
+ENABLE_SSH_CERTS: True
+```
+
+If you already have a runnign vault you can just run the additional_features.sh -script, but first you'll need to edit your
+policy and set it to allow access to ssh-*, add following to the admin policy:
+
+```
+# manage ssh
+path "ssh-*" {
+  capabilities = [ "create", "read", "update", "delete", "list", "sudo" ]
+}
+```
+
+Then you can run the script
+
+```
+bash additional_features.sh
+```
+
+This will activate two more vaults:
+
+* ssh-certs
+* ssh-host-signer
+
+#### Testing SSH certificates
+
+You can use the sshtest container located in this repo for testing the SSH certs out:
+
+First Get trusted CA for ssh connections:
+
+```
+vault read -field=public_key ssh-certs/config/ca > sshtest/trusted-user-ca-keys.pem
+```
+
+Then build and start the container
+
+```
+cd sshtest
+docker build -t sshtest .
+docker run --rm -p 127.0.0.1:2222:22 -it sshtest
+```
+
+Then get signed cert for ssh connection:
+
+```
+## First generate an ssh key
+ssh-keygen -t rsa -b 4096 -f ~/.ssh/testkey
+
+## then get signed certificate for it:
+
+```
+vault write -field=signed_key ssh-certs/sign/ssh-role public_key=@$HOME/.ssh/testkey.pub > $HOME/.ssh/testkey-cert.pub
+```
+
+Now ssh connection should work with the certificate:
+
+```
+ssh -i ~/.ssh/testkey -p 2222 localhost -l ubuntu
+```
+
+#### Additional options
+
+You can change the default behavior of the additional_features.sh with environment variables:
+
+* SSH_CERTS_PATH
+  * This can be used for changing the client certs vault name
+  * NOTE: If you change this to be something else than ssh-* you need to alter the policy as well
+* SSH_ALLOWED_USERS
+  * You can set the allowed user names with this environment variable as comma separated list
+  * In addition to these users, the vault user used for accessing the vault is always allowed
+  * Default: ubuntu,root,ec2-user
+* SSH_DEFAULT_USER
+  * If you don't specify any valid_principals in the key signing request, this is the user that will be used
+  * Default: `ubuntu`
+* SSH_DEFAULT_TTL
+  * Default TTL for the generated certificate
+  * Default: 30m0s
+* SSH_MAX_TTL
+  * Maximum TTL for the certificate that can be set with ttl in the request
+  * Default: 60m0s
+* ALLOWED_EXTENSIONS
+  * What extensions are allowed for the ssh key
+  * Default: permit-pty,permit-port-forwarding
+* SSH_HOST_CERTS_PATH
+  * Key vault path for ssh host certificates
+  * Default: ssh-host-signer
+* SSH_HOST_ALLOWED_DOMAINS
+  * Allowed domains for generating host certificates
+  * Default: localhost,localdomain
+* SSH_HOST_MAX_LEASE
+  * Maximum TTL for host certificate
+  * Default: 87600h
+* SSH_HOST_DEFAULT_TTL
+  * Default TTL for host certificates
+  * Default: 87600h
+
+To change the default values when requesting a signed cert for key, you can use switches when requesting the key
+
+change allowed_principals (user for whom the cert is valid)
+
+```
+### Specify valid_principals as comma separated list
+vault write -field=signed_key ssh-certs/sign/ssh-role valid_principals=ec2-user,root public_key=@$HOME/.ssh/testkey.pub > $HOME/.ssh/testkey-cert.pub
+```
+
+Change ttl for the key
+
+```
+vault write -field=signed_key ssh-certs/sign/ssh-role ttl=45m30s public_key=@$HOME/.ssh/testkey.pub > $HOME/.ssh/testkey-cert.pub
+```

@@ -6,9 +6,11 @@ function init_ssh_certs() {
   ALLOWED_USERS=${SSH_ALLOWED_USERS:-ubuntu,ec2-user,root}
   DEFAULT_USER=${SSH_DEFAULT_USER:-ubuntu}
   DEFAULT_TTL=${SSH_DEFAULT_TTL:-30m0s}
-  MAX_TTL=${SSH_DEFAULT_TTL:-60m0s}
+  MAX_TTL=${SSH_MAX_TTL:-60m0s}
+  ALLOWED_EXTENSIONS=${SSH_ALLOWED_EXTENSIONS:-permit-pty,permit-port-forwarding}
   USERPASS_ACCESSOR=$(vault read sys/auth -format=json|jq -r '.data."userpass/".accessor')
-  ALLOWED_DOMAINS=${SSH_ALLOWED_DOMAINS:-localhost,localdomain}
+  ALLOWED_DOMAINS=${SSH_HOST_ALLOWED_DOMAINS:-localhost,localdomain}
+  HOST_CERTS_PATH=${SSH_HOST_CERTS_PATH:-ssh-host-signer}
   HOST_MAX_LEASE=${SSH_HOST_MAX_LEASE:-87600h}
   HOST_DEFAULT_TTL=${SSH_HOST_DEFAULT_TTL:-87600h}
   vault secrets enable -path=${CERTS_PATH} ssh
@@ -19,15 +21,15 @@ function init_ssh_certs() {
     "allow_user_certificates": true,
     "allowed_users": "{{identity.entity.aliases.'"${USERPASS_ACCESSOR}"'.name}},'"${ALLOWED_USERS}"'",
     "allowed_users_template": true,
-    "allowed_extensions": "permit-pty,permit-port-forwarding",
+    "allowed_extensions": "'"${ALLOWED_EXTENSIONS}"'",
     "default_extensions": {"permit-pty": ""},
     "key_type": "ca",
     "default_user": "'"${DEFAULT_USER}"'",
     "ttl": "'"${DEFAULT_TTL}"'",
     "max_ttl": "'"${MAX_TTL}"'"
   }' | vault write ${CERTS_PATH}/roles/ssh-role -
-  vault secrets enable -path=ssh-host-signer ssh
-  vault write ssh-host-signer/config/ca generate_signing_key=true
+  vault secrets enable -path=${SSH_HOST_CERTS_PATH} ssh
+  vault write ${SSH_HOST_CERTS_PATH}/config/ca generate_signing_key=true
   vault secrets tune -max-lease-ttl=${HOST_MAX_LEASE} ssh-host-signer
   vault write ssh-host-signer/roles/hostrole \
     key_type=ca \
@@ -35,7 +37,8 @@ function init_ssh_certs() {
     ttl=${HOST_DEFAULT_TTL} \
     allow_host_certificates=true \
     allowed_domains="${ALLOWED_DOMAINS}" \
-    allow_subdomains=true
+    allow_subdomains=true \
+    allow_bare_domains=true
 }
 
 init_ssh_certs
