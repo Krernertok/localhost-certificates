@@ -1,7 +1,5 @@
 #!/bin/sh
 
-    #default_extensions={"permit-pty": ""} \
-
 function init_ssh_certs() {
   echo "Enabling support for SSH certificates"
   CERTS_PATH=${SSH_CERTS_PATH:-ssh-certs}
@@ -20,6 +18,7 @@ function init_ssh_certs() {
     "algorithm_signer": "rsa-sha2-256",
     "allow_user_certificates": true,
     "allowed_users": "{{identity.entity.aliases.'"${USERPASS_ACCESSOR}"'.name}},'"${ALLOWED_USERS}"'",
+    "allowed_users_template": true,
     "allowed_extensions": "permit-pty,permit-port-forwarding",
     "default_extensions": {"permit-pty": ""},
     "key_type": "ca",
@@ -38,3 +37,5 @@ function init_ssh_certs() {
     allowed_domains="${ALLOWED_DOMAINS}" \
     allow_subdomains=true
 }
+
+init_ssh_certs
