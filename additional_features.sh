@@ -7,10 +7,10 @@ function init_ssh_certs() {
   DEFAULT_USER=${SSH_DEFAULT_USER:-ubuntu}
   DEFAULT_TTL=${SSH_DEFAULT_TTL:-30m0s}
   MAX_TTL=${SSH_MAX_TTL:-60m0s}
-  ALLOWED_EXTENSIONS=${SSH_ALLOWED_EXTENSIONS:-permit-pty,permit-port-forwarding}
+  ALLOWED_EXTENSIONS=${SSH_ALLOWED_EXTENSIONS:-'permit-pty,permit-port-forwarding'}
   USERPASS_ACCESSOR=$(vault read sys/auth -format=json|jq -r '.data."userpass/".accessor')
   ALLOWED_DOMAINS=${SSH_HOST_ALLOWED_DOMAINS:-localhost,localdomain}
-  HOST_CERTS_PATH=${SSH_HOST_CERTS_PATH:-ssh-host-signer}
+  HOST_CERTS_PATH=${SSH_HOST_CERTS_PATH:-'ssh-host-signer'}
   HOST_MAX_LEASE=${SSH_HOST_MAX_LEASE:-87600h}
   HOST_DEFAULT_TTL=${SSH_HOST_DEFAULT_TTL:-87600h}
   vault secrets enable -path=${CERTS_PATH} ssh
@@ -28,10 +28,10 @@ function init_ssh_certs() {
     "ttl": "'"${DEFAULT_TTL}"'",
     "max_ttl": "'"${MAX_TTL}"'"
   }' | vault write ${CERTS_PATH}/roles/ssh-role -
-  vault secrets enable -path=${SSH_HOST_CERTS_PATH} ssh
-  vault write ${SSH_HOST_CERTS_PATH}/config/ca generate_signing_key=true
+  vault secrets enable -path=${HOST_CERTS_PATH} ssh
+  vault write ${HOST_CERTS_PATH}/config/ca generate_signing_key=true
   vault secrets tune -max-lease-ttl=${HOST_MAX_LEASE} ssh-host-signer
-  vault write ssh-host-signer/roles/hostrole \
+  vault write ${HOST_CERTS_PATH}/roles/hostrole \
     key_type=ca \
     algorithm_signer=rsa-sha2-256 \
     ttl=${HOST_DEFAULT_TTL} \

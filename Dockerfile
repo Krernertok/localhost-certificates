@@ -7,4 +7,6 @@ COPY configuration/admin_policy.hcl /vault/admin_policy.hcl
 COPY configuration/user_template.json /vault/user_template.json
 COPY configuration/server-ssl.hcl /vault/config/server.hcl
 COPY init.sh /vault/init.sh
+COPY additional_features.sh /vault/additional_features.sh
+WORKDIR /vault
 RUN chmod +x /vault/init.sh

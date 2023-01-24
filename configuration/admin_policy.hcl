@@ -62,3 +62,8 @@ path "sys/health"
 path "pki*" {
   capabilities = [ "create", "read", "update", "delete", "list", "sudo" ]
 }
+
+# manage ssh certs
+path "ssh-*" {
+  capabilities = [ "create", "read", "update", "delete", "list", "sudo" ]
+}
