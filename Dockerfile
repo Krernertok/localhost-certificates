@@ -1,4 +1,4 @@
-FROM vault
+FROM hashicorp/vault
 
 ARG VAULT_ADDR=http://127.0.0.1:8200
 RUN apk add --no-cache ca-certificates jq openssl
