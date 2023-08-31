@@ -1,6 +1,7 @@
 version: '3'
 services:
   vault:
+    hostname: ${VAULT_HOSTNAME:-vault.localhost}
     build: 
       context: .
     ports:
@@ -27,6 +28,7 @@ volumes:
 
 networks:
   default:
+    name: ${NETWORK_NAME:-vaultnet}
     ipam:
       driver: default
       config:

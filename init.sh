@@ -10,6 +10,14 @@ if [ ! -f /vault/certs/localhost.pem ]; then
   vault login $(cat /tmp/vault.init | grep '^Initial' | awk '{print $4}')
   vault policy write admin /vault/admin_policy.hcl
   vault auth enable userpass
+  ## Generate secure default password
+  if [ "${PASS}" == 'admin' ]; then
+      PASS=$(openssl rand -base64 18)
+      GENPASS=1
+  elif [ "${PASS}x" == "x" ]; then
+      PASS=$(openssl rand -base64 18)
+      GENPASS=1
+  fi
   sed -i "s/<password>/${PASS}/" /vault/user_template.json
   gateway=$(ip r s|grep default|grep -Eo "[[:digit:]]+\.[[:digit:]]+\.[[:digit:]]+\.[[:digit:]]+")
   sed -i "s/<network>/${gateway}\/32/" /vault/user_template.json
@@ -34,7 +42,7 @@ if [ ! -f /vault/certs/localhost.pem ]; then
         allowed_domains="localhost" \
         allow_subdomains=true \
         max_ttl="17520h"
-  vault write -format=json pki_int/issue/localhost common_name="localhost" alt_names="localhost" ip_sans="127.0.0.1" ttl="17520h" > /tmp/localhost_data.json
+  vault write -format=json pki_int/issue/localhost common_name="$(hostname)" alt_names="localhost" ip_sans="127.0.0.1" ttl="17520h" > /tmp/localhost_data.json
   cat /tmp/localhost_data.json|jq -r .data.certificate > /vault/certs/localhost.pem
   cat /tmp/localhost_data.json|jq -r .data.private_key > /vault/certs/localhost.key
   cat /vault/certs/localhost_CA_cert.crt > /vault/certs/ca.pem
@@ -42,6 +50,9 @@ if [ ! -f /vault/certs/localhost.pem ]; then
   cat /tmp/localhost_data.json|jq -r .data.issuing_ca >> /vault/certs/ca.pem
   if [ "${ENABLE_SSH_CERTS}x" != "x" ]; then
     init_ssh_certs
+  fi
+  if [ "${ENABLE_ACME}x" != "x" ]; then
+    enable_acme
   fi
   vault token revoke $(cat /tmp/vault.init | grep '^Initial' | awk '{print $4}')
   vault operator step-down
@@ -52,11 +63,14 @@ cp /vault/certs/intermediate.cert.pem /usr/local/share/ca-certificates/
 update-ca-certificates
 
 if [ -f /tmp/vault.init ]; then
-    echo "---- NOTICE -----"
+    echo "---- BEGIN NOTICE -----"
     echo "Make sure you store this unseal key to safe place, you will need this to unseal vault:"
     echo "unseal key: $(cat /tmp/vault.init | grep '^Unseal' | awk '{print $4}')"
-    echo "This will be the only occurrence you'll see this key"
-    echo "---- NOTICE -----"
+    if [ ${GENPASS} == 1 ]; then
+        echo "Generated default password for ${USER}: ${PASS}, store this to safe place, you will only see this once"
+    fi
+    echo "This will be the only time you will see this information"
+    echo "---- END NOTICE -----"
     rm -f /tmp/vault.init
     rm -f /vault/user_template.json
     rm -f /tmp/localhost_data.json

@@ -41,4 +41,25 @@ function init_ssh_certs() {
     allow_bare_domains=true
 }
 
-init_ssh_certs
+function enable_acme() {
+  vault secrets tune \
+      -passthrough-request-headers=If-Modified-Since \
+      -allowed-response-headers=Last-Modified \
+      -allowed-response-headers=Location \
+      -allowed-response-headers=Replay-Nonce \
+      -allowed-response-headers=Link \
+      pki_int
+  vault write pki_int/config/cluster \
+     path=https://$(hostname):8200/v1/pki_int \
+     aia_path=https://$(hostname):8200/v1/pki_int
+  vault write pki_int/config/acme enabled=true
+}
+
+case $1 in
+  ssh_certs)
+    init_ssh_certs
+  ;;
+  acme)
+    enable_acme
+  ;;
+esac
