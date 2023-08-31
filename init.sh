@@ -26,8 +26,8 @@ if [ ! -f /vault/certs/localhost.pem ]; then
   vault secrets tune -max-lease-ttl=87600h pki_root
   vault write -field=certificate pki_root/root/generate/internal common_name="localhost Root Authority" ttl=87600h > /vault/certs/localhost_CA_cert.crt
   vault write pki_root/config/urls \
-       issuing_certificates="https://127.0.0.1:8200/v1/pki_root/ca" \
-       crl_distribution_points="https://127.0.0.1:8200/v1/pki_root/crl"
+       issuing_certificates="https://$(hostname):8200/v1/pki_root/ca" \
+       crl_distribution_points="https://$(hostname):8200/v1/pki_root/crl"
   vault secrets enable -path=pki_int pki
   vault secrets tune -max-lease-ttl=43800h pki_int
   vault write -format=json pki_int/intermediate/generate/internal \
