@@ -28,9 +28,12 @@ docker-compose down
 docker-compose up -d
 ```
 
-Store printed unseal key to some secure place and import the printed certificates to your browser and/or system CA storage
+Store printed unseal key to some secure place and import the printed certificates to your browser and/or
+system CA storage. If you did not change the default admin password (i.e. "admin"), a random password has
+been generated for you. Store the printed password in a secure place at least until you have changed it.
 
-go to [https://localhost:8200], unseal with unseal key and log in with admin / admin
+Go to [https://localhost:8200], unseal with unseal key, choose Username as your authentication method and
+use `admin` and the generated password to log in. 
 
 ### More detailed instructions
 
